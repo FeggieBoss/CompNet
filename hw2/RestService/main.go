@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,8 @@ var items = []item{
 	{ID: "3", Name: "6fried eggs", Description: "270g | 455kcal | 32protein"},
 	{ID: "4", Name: "maasdam cheese", Description: "55g | 185kcal | 14protein"},
 }
+
+var itemsImgNames = map[string]string{}
 
 // Получить список всех продуктов
 func getItems(c *gin.Context) {
@@ -102,6 +105,50 @@ func deleteItemByID(c *gin.Context) {
 	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "item not found"})
 }
 
+// Получить картинку продукта
+func getImgById(c *gin.Context) {
+	id := c.Param("id")
+
+	v, ok := itemsImgNames[id]
+	if !ok {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "image not found"})
+	}
+
+	c.FileAttachment(filepath.Base(v), v)
+}
+
+// Добавить/обновить картинку продукту
+func postImg(c *gin.Context) {
+	id := c.PostForm("id")
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.String(http.StatusBadRequest, "get form err: %s", err.Error())
+		return
+	}
+
+	filename := filepath.Base(file.Filename)
+	if err := c.SaveUploadedFile(file, filename); err != nil {
+		c.String(http.StatusBadRequest, "upload file err: %s", err.Error())
+		return
+	}
+
+	itemsImgNames[id] = file.Filename
+	c.String(http.StatusOK, "File %s uploaded successfully with id=%s", file.Filename, id)
+}
+
+func deleteImgById(c *gin.Context) {
+	id := c.Param("id")
+
+	_, ok := itemsImgNames[id]
+	if !ok {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": "image not found"})
+	}
+
+	delete(itemsImgNames, id)
+	c.String(http.StatusOK, "Delete successfully")
+}
+
 func main() {
 	router := gin.Default()
 	router.GET("/items", getItems)
@@ -109,6 +156,10 @@ func main() {
 	router.GET("/items/:id", getItemByID)
 	router.PUT("/items/:id", updateItemByID)
 	router.DELETE("/items/:id", deleteItemByID)
+
+	router.GET("/itemsImg/:id", getImgById)
+	router.POST("/itemsImg", postImg)
+	router.DELETE("/itemsImg/:id", deleteImgById)
 
 	router.Run("localhost:8080")
 }
