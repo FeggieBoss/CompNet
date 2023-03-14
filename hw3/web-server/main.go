@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -32,18 +35,6 @@ func main() {
 	}
 }
 
-func contentType(fileName string) string {
-	if strings.HasSuffix(fileName, ".htm") || strings.HasSuffix(fileName, ".html") {
-		return "text/html"
-	}
-
-	if strings.HasSuffix(fileName, ".ram") || strings.HasSuffix(fileName, ".ra") {
-		return "audio/x-pn-realaudio"
-	}
-
-	return "application/octet-stream"
-}
-
 func handleClient(conn net.Conn, stopper chan int) {
 	defer conn.Close()
 
@@ -65,32 +56,14 @@ func handleClient(conn net.Conn, stopper chan int) {
 		fileExists = true
 	}
 
-	statusLine := ""
-	contentTypeLine := ""
-	entityBody := ""
+	var resp http.Response
 	if fileExists {
-		statusLine = "HTTP/1.0 200 OK" + CRLF
-		contentTypeLine = "Content-Type: " + contentType(fileName) + CRLF
+		resp = http.Response{Status: "200 OK", Body: io.NopCloser(bytes.NewReader(data))}
 	} else {
-		statusLine = "HTTP/1.0 404 Not Found" + CRLF
-		contentTypeLine = "Content-Type: text/html" + CRLF
-		entityBody = "<HTML>" +
-			"<HEAD><TITLE>Not Found</TITLE></HEAD>" +
-			"<BODY>Not Found</BODY></HTML>"
+		resp = http.Response{Status: "404 NOT FOUND", Body: io.NopCloser(strings.NewReader("File not found!"))}
 	}
 
-	var sb strings.Builder
-	sb.WriteString(statusLine)
-	sb.WriteString(contentTypeLine)
-	sb.WriteString(CRLF)
-
-	if fileExists {
-		sb.WriteString(string(data))
-	} else {
-		sb.WriteString(entityBody)
-	}
-
-	_, err = conn.Write([]byte(sb.String()))
+	err = resp.Write(conn)
 	if err != nil {
 		log.Fatalln(err)
 	}
