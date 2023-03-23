@@ -1,5 +1,5 @@
 ## A - Утилита nslookup 
-## 1.
+### 1.
 ```
 $ nslookup www.tsinghua.edu.cn
 ``` 
@@ -15,7 +15,7 @@ Address: 2402:f000:1:404:166:111:4:100
 ```
 Получается `166.111.4.100`
 
-## 2.
+### 2.
 
 ```
 $ nslookup -type=NS www.rca.ac.uk
@@ -40,7 +40,7 @@ cloudflare.net
 ```
 Отсюда уже видно, что нужный нам dns сервер - `ns1.cloudflare.net`
 
-## 3.
+### 3.
 Пример такого веб-сервера `google.com`
 ```
 $ nslookup google.com
