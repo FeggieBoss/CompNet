@@ -28,7 +28,7 @@ type RouterTablePiece struct {
 func printTable(mutex *sync.Mutex, t []RouterTablePiece, header string) {
 	mutex.Lock()
 	fmt.Printf("%s of router %s table\n", header, t[0].source)
-	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
 	fmt.Fprintln(w, "[Source IP]\t[Destination IP]\t[Next Hop]\t[Metric]")
 	for _, piece := range t {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%d\n",
@@ -154,11 +154,10 @@ loop:
 				for _, c := range cs {
 					c <- st
 				}
+				step++
 				printTable(mutex, st, fmt.Sprintf("Simulation step %d", step))
 			}
 		}
-
-		step++
 	}
 	printTable(mutex, st, "Final step")
 }
